@@ -8,7 +8,7 @@ app = FastAPI()
 app.mount("/metrics", make_asgi_app())
 UPLOAD_COUNTER = Counter('images_uploaded_total', 'Total images uploaded')
 
-s3 = boto3.client('s3', endpoint_url="http://minio:9000")
+s3 = boto3.client('s3', endpoint_url="http://localstack:4566")
 
 @app.on_event("startup")
 def setup():

@@ -1,21 +1,19 @@
 services:
-  # 1. محاكي S3 الجديد (MinIO)
-  minio:
-    image: minio/minio:latest
+
+  localstack:
+    image: localstack/localstack:2.3.2
     ports:
-      - "9000:9000"   
-      - "9001:9001"   
+      - "4566:4566"
     environment:
-      - MINIO_ROOT_USER=test
-      - MINIO_ROOT_PASSWORD=testpassword
-    command: server /data --console-address ":9001"
+      - SERVICES=s3
+      - DOCKER_HOST=unix:///var/run/docker.sock
 
   api:
     build: ./api
     env_file:
       - .env
     depends_on:
-      - minio
+      - localstack
 
   agent:
     build: ./agent
@@ -45,7 +43,12 @@ services:
 
   grafana:
     image: grafana/grafana:latest
+    volumes:
+      - grafana_data:/var/lib/grafana
     ports:
       - "3000:3000"
     depends_on:
       - prometheus
+
+volumes:
+    grafana_data:

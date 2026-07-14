@@ -1,0 +1,47 @@
+name: Azure VM CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: CI - Build Docker
+        run: docker compose build
+
+      - name: Telegram on CI Failure
+        if: failure()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: "CI Failed Error in docker compose build."
+
+      - name: CD - Deploy to Azure VM
+        if: success()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AZURE_VM_IP }}
+          username: rfadmin
+          key: ${{ secrets.AZURE_SSH_KEY }}
+          script: |
+            cd /home/rfadmin/s3-MicroServices-CI-CD-Uploader
+            git fetch --all
+            git reset --hard origin/main
+            docker compose down
+            docker compose up -d --build
+
+      - name: Telegram on Deploy Success
+        if: success()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: "Pipeline Success Microservices are live on Azure."
